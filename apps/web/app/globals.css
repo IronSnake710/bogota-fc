@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+:root {
+  /* Bogota FC - Brand Colors */
+  --color-primary: #1a3a5c;
+  --color-primary-dark: #0f2538;
+  --color-primary-light: #2d5a8a;
+  --color-secondary: #c41e3a;
+  --color-secondary-dark: #9a1830;
+  --color-secondary-light: #e03a5a;
+  --color-accent: #f4d03f;
+  --color-accent-dark: #d4ac0d;
+  --color-accent-light: #f7dc6f;
+  
+  /* Neutral Colors */
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+  --color-surface: #f8f9fa;
+  --color-surface-dark: #e9ecef;
+  --color-border: #dee2e6;
+  --color-text-muted: #6c757d;
+  --color-text-secondary: #495057;
+  
+  /* Semantic Colors */
+  --color-success: #28a745;
+  --color-warning: #ffc107;
+  --color-error: #dc3545;
+  --color-info: #17a2b8;
+}
+
+@theme inline {
+  /* Brand */
+  --color-primary: var(--color-primary);
+  --color-primary-dark: var(--color-primary-dark);
+  --color-primary-light: var(--color-primary-light);
+  --color-secondary: var(--color-secondary);
+  --color-secondary-dark: var(--color-secondary-dark);
+  --color-secondary-light: var(--color-secondary-light);
+  --color-accent: var(--color-accent);
+  --color-accent-dark: var(--color-accent-dark);
+  --color-accent-light: var(--color-accent-light);
+  
+  /* Neutral */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--color-surface);
+  --color-surface-dark: var(--color-surface-dark);
+  --color-border: var(--color-border);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-secondary: var(--color-text-secondary);
+  
+  /* Semantic */
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-error: var(--color-error);
+  --color-info: var(--color-info);
+  
+  /* Fonts */
+  --font-sans: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+@layer base {
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--color-primary);
+    font-weight: 700;
+  }
+}
+
+@layer components {
+  .container-club {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-4 py-2 bg-primary text-white font-medium rounded-lg hover:bg-primary-dark transition-colors cursor-pointer;
+  }
+  
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-4 py-2 bg-secondary text-white font-medium rounded-lg hover:bg-secondary-dark transition-colors cursor-pointer;
+  }
+  
+  .card-club {
+    @apply bg-surface rounded-xl border border-border p-6 shadow-sm;
+  }
+}
+
