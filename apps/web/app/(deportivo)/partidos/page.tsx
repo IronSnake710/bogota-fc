@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { Metadata } from 'next';
 import { MatchCard } from '@/components/matches/MatchCard';
-import { FilterBar } from '@/components/shared/FilterBar';
+import { MatchFiltersClient } from '@/components/matches/MatchFiltersClient';
 import { Button } from '@/components/ui/Button';
-import { getUpcomingMatches, getFinishedMatches, mockCompetitions, mockSeasons } from '@/lib/data/mock';
+import { getUpcomingMatchesServer, getRecentMatchesServer } from '@/lib/data/server';
 
 export const metadata: Metadata = {
   title: 'Partidos',
@@ -17,18 +17,14 @@ interface PageProps {
 export default async function PartidosPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const activeTab = params.tab || 'proximos';
-  const selectedCompetition = params.competicion || 'todas';
-  const selectedSeason = params.temporada || '2024';
 
-  // Get matches based on tab
-  const upcomingMatches = getUpcomingMatches();
-  const finishedMatches = getFinishedMatches();
+  // Get real matches from Supabase
+  const [upcomingMatches, finishedMatches] = await Promise.all([
+    getUpcomingMatchesServer(20),
+    getRecentMatchesServer(20),
+  ]);
+  
   const matches = activeTab === 'proximos' ? upcomingMatches : finishedMatches;
-
-  // Filter by competition if selected
-  const filteredMatches = selectedCompetition === 'todas'
-    ? matches
-    : matches.filter((m) => m.competicion?.slug === selectedCompetition);
 
   // Tab configuration
   const tabs = [
@@ -36,17 +32,27 @@ export default async function PartidosPage({ searchParams }: PageProps) {
     { value: 'resultados', label: 'Resultados' },
   ];
 
-  // Competition filter
+  // Competition filter (from real data)
+  const competitionSlugs = [...new Set(matches.map(m => m.competition?.slug).filter((slug): slug is string => !!slug))];
   const competitionOptions = [
     { value: 'todas', label: 'Todas las competiciones' },
-    ...mockCompetitions.map((c) => ({ value: c.slug, label: c.nombre })),
+    ...competitionSlugs.map(slug => ({
+      value: slug,
+      label: matches.find(m => m.competition?.slug === slug)?.competition?.name || slug,
+    })),
   ];
 
-  // Season filter
-  const seasonOptions = mockSeasons.map((s) => ({
-    value: s.slug,
-    label: s.nombre,
-  }));
+  // Season filter (simplified for now)
+  const seasonOptions = [{ value: '2025', label: 'Temporada 2025' }];
+
+  // Get selected filters
+  const selectedCompetition = params.competicion || 'todas';
+  const selectedSeason = params.temporada || '2025';
+
+  // Filter by competition if selected
+  const filteredMatches = selectedCompetition === 'todas'
+    ? matches
+    : matches.filter((m) => m.competition?.slug === selectedCompetition);
 
   return (
     <div className="min-h-screen">
@@ -66,31 +72,13 @@ export default async function PartidosPage({ searchParams }: PageProps) {
       {/* Filters */}
       <section className="py-6 bg-surface border-b border-border">
         <div className="container-club">
-          <FilterBar
+          <MatchFiltersClient
             tabs={tabs}
             activeTab={activeTab}
-            onTabChange={(tab) => {
-              // Client-side navigation would happen here
-              window.location.href = `/partidos?tab=${tab}`;
-            }}
-            filters={[
-              {
-                name: 'Competición',
-                options: competitionOptions,
-                value: selectedCompetition,
-                onChange: (value) => {
-                  window.location.href = `/partidos?tab=${activeTab}&competicion=${value}`;
-                },
-              },
-              {
-                name: 'Temporada',
-                options: seasonOptions,
-                value: selectedSeason,
-                onChange: (value) => {
-                  window.location.href = `/partidos?tab=${activeTab}&temporada=${value}`;
-                },
-              },
-            ]}
+            competitionOptions={competitionOptions}
+            seasonOptions={seasonOptions}
+            selectedCompetition={selectedCompetition}
+            selectedSeason={selectedSeason}
           />
         </div>
       </section>

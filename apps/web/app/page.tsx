@@ -1,73 +1,41 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { getNewsServer, getUpcomingMatchesServer, getRecentMatchesServer, getStandingsServer } from '@/lib/data/server';
 
-// Mock data for the homepage
-const nextMatch = {
-  id: '1',
-  homeTeam: { name: 'Bogota FC', shortName: 'BFC' },
-  awayTeam: { name: 'Millonarios', shortName: 'MIL' },
-  date: 'Sábado, 15 de Marzo',
-  time: '18:00',
-  competition: 'Liga BetPlay',
-  stadium: 'Estadio El Campín',
-  ticketLink: '/entradas/1',
-};
+// Format date for display
+function formatDate(dateStr: string) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('es-CO', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
+}
 
-const recentResults = [
-  {
-    id: '1',
-    homeTeam: { name: 'Bogota FC', score: 2 },
-    awayTeam: { name: 'Santa Fe', score: 1 },
-    competition: 'Liga BetPlay',
-    date: 'Hace 3 días',
-  },
-  {
-    id: '2',
-    homeTeam: { name: 'Nacional', score: 0 },
-    awayTeam: { name: 'Bogota FC', score: 0 },
-    competition: 'Liga BetPlay',
-    date: 'Hace 1 semana',
-  },
-];
+function formatTime(dateStr: string) {
+  const date = new Date(dateStr);
+  return date.toLocaleTimeString('es-CO', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
-const news = [
-  {
-    id: '1',
-    title: 'Bogota FC gana el clásico capitalino',
-    excerpt: 'Victoria importante en El Campín con goles de Martínez y Rodríguez.',
-    category: 'Equipo',
-    date: 'Hace 2 horas',
-    featured: true,
-  },
-  {
-    id: '2',
-    title: 'Nuevo refuerzo para la delantera',
-    excerpt: 'El delantero internacional se une al equipo para la segunda mitad de la temporada.',
-    category: 'Fichajes',
-    date: 'Hace 5 horas',
-    featured: false,
-  },
-  {
-    id: '3',
-    title: 'Convocatoria para la cantera',
-    excerpt: 'Pruebas de selección para las categorías inferiores este fin de semana.',
-    category: 'Academia',
-    date: 'Hace 1 día',
-    featured: false,
-  },
-];
+export default async function HomePage() {
+  // Fetch real data from Supabase
+  const [news, upcomingMatches, recentMatches, standings] = await Promise.all([
+    getNewsServer(6),
+    getUpcomingMatchesServer(2),
+    getRecentMatchesServer(2),
+    // Use mock season/competition IDs for now - replace with real ones when available
+    getStandingsServer('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000').catch(() => []),
+  ]);
 
-const standings = [
-  { pos: 1, team: 'Bogota FC', pj: 15, pts: 35, form: ['W', 'W', 'D', 'W', 'W'] },
-  { pos: 2, team: 'Millonarios', pj: 15, pts: 32, form: ['W', 'D', 'W', 'W', 'D'] },
-  { pos: 3, team: 'Nacional', pj: 15, pts: 29, form: ['D', 'W', 'L', 'W', 'W'] },
-  { pos: 4, team: 'Santa Fe', pj: 15, pts: 27, form: ['L', 'W', 'W', 'L', 'D'] },
-  { pos: 5, team: 'América', pj: 15, pts: 24, form: ['W', 'L', 'D', 'W', 'L'] },
-];
+  // Get next match from real data or use mock
+  const nextMatch = upcomingMatches[0] || null;
 
-export default function HomePage() {
   return (
     <div className="flex flex-col">
       {/* Hero Section - Next Match */}
@@ -79,17 +47,30 @@ export default function HomePage() {
               <Badge variant="secondary" className="mb-4">
                 Próximo Partido
               </Badge>
-              <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
-                {nextMatch.homeTeam.name} vs {nextMatch.awayTeam.name}
-              </h1>
-              <p className="text-white/80 text-lg mb-2">
-                {nextMatch.competition} • {nextMatch.date} • {nextMatch.time}
-              </p>
+              {nextMatch ? (
+                <>
+                  <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
+                    {nextMatch.home_team?.name} vs {nextMatch.away_team?.name}
+                  </h1>
+                  <p className="text-white/80 text-lg mb-2">
+                    {nextMatch.competition?.name} • {formatDate(nextMatch.kickoff_at)} • {formatTime(nextMatch.kickoff_at)}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
+                    Próximo Partido
+                  </h1>
+                  <p className="text-white/80 text-lg mb-2">
+                    No hay partidos programados próximamente
+                  </p>
+                </>
+              )}
               <p className="text-white/60 mb-6">
-                {nextMatch.stadium}
+                Estadio El Campín
               </p>
               <div className="flex flex-wrap gap-4">
-                <Link href={nextMatch.ticketLink}>
+                <Link href="/entradas">
                   <Button variant="secondary" size="lg">
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
@@ -97,7 +78,7 @@ export default function HomePage() {
                     Comprar Entradas
                   </Button>
                 </Link>
-                <Link href={`/partidos/${nextMatch.id}`}>
+                <Link href="/partidos">
                   <Button variant="outline" size="lg" className="border-white text-white hover:bg-white/10">
                     Ver Detalles
                   </Button>
@@ -105,22 +86,38 @@ export default function HomePage() {
               </div>
             </div>
             <div className="flex items-center justify-center gap-6 md:gap-12">
-              <div className="text-center">
-                <div className="w-20 h-20 md:w-28 md:h-28 bg-white rounded-full flex items-center justify-center mb-3">
-                  <span className="text-primary font-bold text-xl md:text-2xl">BFC</span>
+              {nextMatch ? (
+                <>
+                  <div className="text-center">
+                    <div className="w-20 h-20 md:w-28 md:h-28 bg-white rounded-full flex items-center justify-center mb-3">
+                      <span className="text-primary font-bold text-xl md:text-2xl">
+                        {nextMatch.home_team?.short_name || 'BFC'}
+                      </span>
+                    </div>
+                    <span className="text-white font-semibold">
+                      {nextMatch.home_team?.name}
+                    </span>
+                  </div>
+                  <div className="text-center">
+                    <span className="text-white/60 text-sm">VS</span>
+                    <div className="text-4xl md:text-6xl font-bold text-white/20">—</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-20 h-20 md:w-28 md:h-28 bg-white/10 rounded-full flex items-center justify-center mb-3">
+                      <span className="text-white font-bold text-xl md:text-2xl">
+                        {nextMatch.away_team?.short_name || 'VIS'}
+                      </span>
+                    </div>
+                    <span className="text-white font-semibold">
+                      {nextMatch.away_team?.name}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center">
+                  <p className="text-white/60">No hay partidos programados</p>
                 </div>
-                <span className="text-white font-semibold">{nextMatch.homeTeam.name}</span>
-              </div>
-              <div className="text-center">
-                <span className="text-white/60 text-sm">VS</span>
-                <div className="text-4xl md:text-6xl font-bold text-white/20">—</div>
-              </div>
-              <div className="text-center">
-                <div className="w-20 h-20 md:w-28 md:h-28 bg-white/10 rounded-full flex items-center justify-center mb-3">
-                  <span className="text-white font-bold text-xl md:text-2xl">MIL</span>
-                </div>
-                <span className="text-white font-semibold">{nextMatch.awayTeam.name}</span>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -131,38 +128,44 @@ export default function HomePage() {
         <div className="container-club">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-foreground">Resultados Recientes</h2>
-            <Link href="/partidos?tab=resultados" className="text-sm text-primary hover:underline">
+            <Link href="/partidos" className="text-sm text-primary hover:underline">
               Ver todos
             </Link>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
-            {recentResults.map((match) => (
-              <Card key={match.id} className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                      <span className="text-primary font-bold text-sm">BFC</span>
+            {recentMatches.length > 0 ? (
+              recentMatches.map((match) => (
+                <Card key={match.id} className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                        <span className="text-primary font-bold text-sm">{match.home_team?.short_name?.slice(0, 3) || 'LOC'}</span>
+                      </div>
+                      <span className="font-medium">{match.home_team?.name}</span>
                     </div>
-                    <span className="font-medium">{match.homeTeam.name}</span>
-                  </div>
-                  <div className="flex items-center gap-2 px-4">
-                    <span className="text-2xl font-bold text-primary">{match.homeTeam.score}</span>
-                    <span className="text-text-muted">:</span>
-                    <span className="text-2xl font-bold text-primary">{match.awayTeam.score}</span>
-                  </div>
-                  <div className="flex items-center gap-3 flex-1 justify-end">
-                    <span className="font-medium">{match.awayTeam.name}</span>
-                    <div className="w-10 h-10 bg-surface-dark rounded-full flex items-center justify-center">
-                      <span className="text-text-muted font-bold text-sm">{match.awayTeam.name.slice(0, 3).toUpperCase()}</span>
+                    <div className="flex items-center gap-2 px-4">
+                      <span className="text-2xl font-bold text-primary">{match.home_score}</span>
+                      <span className="text-text-muted">:</span>
+                      <span className="text-2xl font-bold text-primary">{match.away_score}</span>
+                    </div>
+                    <div className="flex items-center gap-3 flex-1 justify-end">
+                      <span className="font-medium">{match.away_team?.name}</span>
+                      <div className="w-10 h-10 bg-surface-dark rounded-full flex items-center justify-center">
+                        <span className="text-text-muted font-bold text-sm">{match.away_team?.short_name?.slice(0, 3) || 'VIS'}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-sm text-text-muted">
-                  <span>{match.competition}</span>
-                  <span>{match.date}</span>
-                </div>
-              </Card>
-            ))}
+                  <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-sm text-text-muted">
+                    <span>{match.competition?.name}</span>
+                    <span>{formatDate(match.kickoff_at)}</span>
+                  </div>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-2 text-center py-8">
+                <p className="text-text-muted">No hay resultados recientes disponibles.</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -177,29 +180,50 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
-            {news.map((article, index) => (
-              <Link key={article.id} href={`/noticias/${article.id}`}>
-                <Card className={`h-full transition-shadow hover:shadow-md ${index === 0 ? 'md:col-span-2 md:row-span-2' : ''}`}>
-                  <div className={`bg-surface-dark rounded-lg mb-4 flex items-center justify-center ${index === 0 ? 'h-48 md:h-64' : 'h-40'}`}>
-                    <svg className="w-16 h-16 text-text-muted/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <CardHeader className="mb-2">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="secondary">{article.category}</Badge>
-                      <span className="text-sm text-text-muted">{article.date}</span>
-                    </div>
-                    <CardTitle className={index === 0 ? 'text-2xl' : 'text-lg'}>
-                      {article.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-text-muted">{article.excerpt}</p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+            {news.length > 0 ? (
+              news.map((article, index) => (
+                <Link key={article.id} href={`/noticias/${article.slug}`}>
+                  <Card className={`h-full transition-shadow hover:shadow-md ${index === 0 ? 'md:col-span-2 md:row-span-2' : ''}`}>
+                    {article.cover_image_url ? (
+                      <div className={`rounded-lg mb-4 overflow-hidden relative ${index === 0 ? 'h-48 md:h-64' : 'h-40'}`}>
+                        <Image 
+                          src={article.cover_image_url} 
+                          alt={article.title} 
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, 50vw"
+                        />
+                      </div>
+                    ) : (
+                      <div className={`bg-surface-dark rounded-lg mb-4 flex items-center justify-center ${index === 0 ? 'h-48 md:h-64' : 'h-40'}`}>
+                        <svg className="w-16 h-16 text-text-muted/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
+                    <CardHeader className="mb-2">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="secondary">{article.content_type}</Badge>
+                        {article.published_at && (
+                          <span className="text-sm text-text-muted">{formatDate(article.published_at)}</span>
+                        )}
+                      </div>
+                      <CardTitle className={index === 0 ? 'text-2xl' : 'text-lg'}>
+                        {article.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-text-muted">{article.summary}</p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))
+            ) : (
+              // Fallback message when no news
+              <div className="col-span-3 text-center py-12">
+                <p className="text-text-muted">No hay noticias disponibles en este momento.</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -226,36 +250,44 @@ export default function HomePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {standings.map((team) => (
-                    <tr key={team.pos} className="border-b border-border last:border-0 hover:bg-surface-dark/50">
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex items-center justify-center w-6 h-6 rounded text-sm font-bold ${
-                          team.pos === 1 ? 'bg-secondary text-white' : 'text-text-muted'
-                        }`}>
-                          {team.pos}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 font-medium">{team.team}</td>
-                      <td className="py-3 px-4 text-center text-text-muted">{team.pj}</td>
-                      <td className="py-3 px-4 text-center font-bold text-primary">{team.pts}</td>
-                      <td className="py-3 px-4 hidden sm:table-cell">
-                        <div className="flex gap-1 justify-center">
-                          {team.form.map((result, i) => (
-                            <span
-                              key={i}
-                              className={`w-5 h-5 rounded text-xs flex items-center justify-center font-bold ${
-                                result === 'W' ? 'bg-success text-white' :
-                                result === 'D' ? 'bg-warning text-primary-dark' :
-                                'bg-error text-white'
-                              }`}
-                            >
-                              {result}
-                            </span>
-                          ))}
-                        </div>
+                  {standings.length > 0 ? (
+                    standings.map((team) => (
+                      <tr key={team.id} className="border-b border-border last:border-0 hover:bg-surface-dark/50">
+                        <td className="py-3 px-4">
+                          <span className={`inline-flex items-center justify-center w-6 h-6 rounded text-sm font-bold ${
+                            team.position === 1 ? 'bg-secondary text-white' : 'text-text-muted'
+                          }`}>
+                            {team.position}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 font-medium">{team.team?.name}</td>
+                        <td className="py-3 px-4 text-center text-text-muted">{team.played}</td>
+                        <td className="py-3 px-4 text-center font-bold text-primary">{team.points}</td>
+                        <td className="py-3 px-4 hidden sm:table-cell">
+                          <div className="flex gap-1 justify-center">
+                            {team.form?.split('-').slice(0, 5).map((result, i) => (
+                              <span
+                                key={i}
+                                className={`w-5 h-5 rounded text-xs flex items-center justify-center font-bold ${
+                                  result === 'W' ? 'bg-success text-white' :
+                                  result === 'D' ? 'bg-warning text-primary-dark' :
+                                  'bg-error text-white'
+                                }`}
+                              >
+                                {result === 'W' ? 'V' : result === 'D' ? 'E' : 'D'}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="text-center py-8">
+                        <p className="text-text-muted">No hay datos de clasificación disponibles.</p>
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>

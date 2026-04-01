@@ -4,7 +4,41 @@ import { notFound } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { getMatchById, mockMatches } from '@/lib/data/mock';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
+import type { MatchWithTeams } from '@/lib/data/server';
+
+interface PageProps {
+  params: Promise<{ matchId: string }>;
+}
+
+async function getMatchById(id: string): Promise<MatchWithTeams | null> {
+  const supabase = await createServerSupabaseClient();
+  
+  const { data: match, error } = await supabase
+    .from('matches')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error || !match) {
+    return null;
+  }
+
+  // Fetch related teams and competition
+  const [{ data: teams }, { data: competitions }] = await Promise.all([
+    supabase.from('teams').select('*').in('id', [match.home_team_id, match.away_team_id]),
+    supabase.from('competitions').select('*').eq('id', match.competition_id).single(),
+  ]);
+
+  const teamMap = new Map((teams || []).map(t => [t.id, t]));
+
+  return {
+    ...match,
+    home_team: teamMap.get(match.home_team_id) || null,
+    away_team: teamMap.get(match.away_team_id) || null,
+    competition: competitions || null,
+  };
+}
 
 interface PageProps {
   params: Promise<{ matchId: string }>;
@@ -12,35 +46,29 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { matchId } = await params;
-  const match = getMatchById(matchId);
+  const match = await getMatchById(matchId);
   
   if (!match) {
     return { title: 'Partido no encontrado | Bogota FC' };
   }
 
   return {
-    title: `${match.equipoLocal?.nombre} vs ${match.equipoVisita?.nombre} | Bogota FC`,
-    description: `Detalles del partido ${match.equipoLocal?.nombre} vs ${match.equipoVisita?.nombre} - ${match.competicion?.nombre}`,
+    title: `${match.home_team?.name} vs ${match.away_team?.name} | Bogota FC`,
+    description: `Detalles del partido ${match.home_team?.name} vs ${match.away_team?.name} - ${match.competition?.name}`,
   };
-}
-
-export async function generateStaticParams() {
-  return mockMatches.map((match) => ({
-    matchId: match.id,
-  }));
 }
 
 export default async function MatchDetailPage({ params }: PageProps) {
   const { matchId } = await params;
-  const match = getMatchById(matchId);
+  const match = await getMatchById(matchId);
 
   if (!match) {
     notFound();
   }
 
-  const isScheduled = match.estado === 'programado';
-  const isLive = match.estado === 'en_vivo';
-  const isFinished = match.estado === 'finalizado';
+  const isScheduled = match.status === 'scheduled';
+  const isLive = match.status === 'live';
+  const isFinished = match.status === 'finished';
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -81,10 +109,10 @@ export default async function MatchDetailPage({ params }: PageProps) {
           {/* Competition & Status */}
           <div className="flex items-center justify-center gap-3 mb-6">
             <Badge variant="secondary" className="text-sm">
-              {match.competicion?.nombre}
+              {match.competition?.name}
             </Badge>
-            {match.jornada && (
-              <span className="text-white/80 text-sm">Jornada {match.jornada}</span>
+            {match.matchday && (
+              <span className="text-white/80 text-sm">Jornada {match.matchday}</span>
             )}
             {isLive && (
               <Badge variant="error" className="animate-pulse">EN VIVO</Badge>
@@ -97,11 +125,11 @@ export default async function MatchDetailPage({ params }: PageProps) {
             <div className="flex flex-col items-center">
               <div className="w-24 h-24 md:w-32 md:h-32 bg-white rounded-full flex items-center justify-center mb-4">
                 <span className="text-primary font-bold text-2xl md:text-3xl">
-                  {match.equipoLocal?.nombre?.slice(0, 3).toUpperCase()}
+                  {match.home_team?.short_name?.slice(0, 3).toUpperCase()}
                 </span>
               </div>
               <h2 className="text-xl md:text-2xl font-bold text-white text-center">
-                {match.equipoLocal?.nombre}
+                {match.home_team?.name}
               </h2>
               <span className="text-white/60 mt-1">Local</span>
             </div>
@@ -110,13 +138,13 @@ export default async function MatchDetailPage({ params }: PageProps) {
             <div className="text-center">
               {isScheduled ? (
                 <div className="text-5xl md:text-7xl font-bold text-white">
-                  {formatTime(match.fechaHora)}
+                  {formatTime(match.kickoff_at)}
                 </div>
               ) : (
                 <div className="flex items-center gap-4 text-6xl md:text-8xl font-bold text-white">
-                  <span>{match.marcadorLocal}</span>
+                  <span>{match.home_score}</span>
                   <span className="text-white/40">:</span>
-                  <span>{match.marcadorVisita}</span>
+                  <span>{match.away_score}</span>
                 </div>
               )}
               <div className="mt-4">
@@ -134,11 +162,11 @@ export default async function MatchDetailPage({ params }: PageProps) {
             <div className="flex flex-col items-center">
               <div className="w-24 h-24 md:w-32 md:h-32 bg-white/10 rounded-full flex items-center justify-center mb-4">
                 <span className="text-white font-bold text-2xl md:text-3xl">
-                  {match.equipoVisita?.nombre?.slice(0, 3).toUpperCase()}
+                  {match.away_team?.short_name?.slice(0, 3).toUpperCase()}
                 </span>
               </div>
               <h2 className="text-xl md:text-2xl font-bold text-white text-center">
-                {match.equipoVisita?.nombre}
+                {match.away_team?.name}
               </h2>
               <span className="text-white/60 mt-1">Visita</span>
             </div>
@@ -146,8 +174,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
 
           {/* Match Info */}
           <div className="mt-8 text-center">
-            <p className="text-white/80 text-lg">{formatDate(match.fechaHora)}</p>
-            <p className="text-white/60 mt-1">{match.arbitro && `Árbitro: ${match.arbitro}`}</p>
+            <p className="text-white/80 text-lg">{formatDate(match.kickoff_at)}</p>
           </div>
 
           {/* CTA */}
@@ -271,26 +298,20 @@ export default async function MatchDetailPage({ params }: PageProps) {
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
                       <span className="text-text-muted">Competición</span>
-                      <span className="font-medium">{match.competicion?.nombre}</span>
+                      <span className="font-medium">{match.competition?.name}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-text-muted">Fecha</span>
-                      <span className="font-medium">{formatDate(match.fechaHora)}</span>
+                      <span className="font-medium">{formatDate(match.kickoff_at)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-text-muted">Hora</span>
-                      <span className="font-medium">{formatTime(match.fechaHora)}</span>
+                      <span className="font-medium">{formatTime(match.kickoff_at)}</span>
                     </div>
-                    {match.jornada && (
+                    {match.matchday && (
                       <div className="flex justify-between">
                         <span className="text-text-muted">Jornada</span>
-                        <span className="font-medium">{match.jornada}</span>
-                      </div>
-                    )}
-                    {match.arbitro && (
-                      <div className="flex justify-between">
-                        <span className="text-text-muted">Árbitro</span>
-                        <span className="font-medium">{match.arbitro}</span>
+                        <span className="font-medium">{match.matchday}</span>
                       </div>
                     )}
                   </div>
