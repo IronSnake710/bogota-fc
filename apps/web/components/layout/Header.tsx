@@ -266,9 +266,9 @@ export function Header() {
       <div className="bg-primary-dark">
         <div className="container-club py-2 flex items-center justify-between text-xs text-white/80">
           <div className="flex items-center gap-4">
-            <span>Fundado en 2024</span>
+            <span>Fundado en 2025</span>
             <span className="hidden sm:inline">|</span>
-            <span className="hidden sm:inline">Bogotá, Colombia</span>
+            <span className="hidden sm:inline">Bogotá D.C., Colombia</span>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/busqueda" className="hover:text-white transition-colors">
