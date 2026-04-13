@@ -136,7 +136,7 @@ function NavLink({ item, className }: { item: NavItem; className?: string }) {
           <Link
             key={child.href}
             href={child.href}
-            className="block px-4 py-2 text-sm text-foreground hover:bg-primary/5 hover:text-primary transition-colors"
+            className="block px-4 py-2 text-sm text-gray-900 hover:bg-primary/5 hover:text-primary transition-colors"
           >
             {child.label}
           </Link>
