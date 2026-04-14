@@ -1,35 +1,72 @@
 @import "tailwindcss";
 
 :root {
-  /* Bogota FC - Brand Colors */
-  --color-primary: #1a3a5c;
-  --color-primary-dark: #0f2538;
-  --color-primary-light: #2d5a8a;
-  --color-secondary: #c41e3a;
-  --color-secondary-dark: #9a1830;
-  --color-secondary-light: #e03a5a;
-  --color-accent: #f4d03f;
-  --color-accent-dark: #d4ac0d;
-  --color-accent-light: #f7dc6f;
+  /* Bogota FC - New Brand Colors (Teal Palette) */
+  --primary-900: #004C54;
+  --primary-800: #005F6A;
+  --primary-700: #00707D;
+  --primary-600: #008C9A;
+  --primary-500: #00A3B2;
+
+  --bg-main: #021F23;
+  --bg-soft: #03363C;
+  --surface: #04474F;
+
+  --text-main: #FFFFFF;
+  --text-muted: #A5C4C8;
+
+  --accent: #00B8C4;
+  --silver: #A5ACAF;
+
+  /* Legacy compatibility mappings */
+  --color-primary: var(--primary-800);
+  --color-primary-dark: var(--primary-900);
+  --color-primary-light: var(--primary-700);
+  --color-secondary: var(--accent);
+  --color-secondary-dark: #009ba6;
+  --color-secondary-light: #33c5ce;
+  --color-accent: var(--accent);
+  --color-accent-dark: #009ba6;
+  --color-accent-light: #33c5ce;
   
   /* Neutral Colors */
-  --background: #ffffff;
-  --foreground: #1a1a1a;
-  --color-surface: #f8f9fa;
-  --color-surface-dark: #e9ecef;
-  --color-border: #dee2e6;
-  --color-text-muted: #6c757d;
-  --color-text-secondary: #495057;
+  --background: var(--bg-main);
+  --foreground: var(--text-main);
+  --color-surface: var(--surface);
+  --color-surface-dark: var(--bg-soft);
+  --color-border: var(--surface);
+  --color-text-muted: var(--text-muted);
+  --color-text-secondary: var(--silver);
   
   /* Semantic Colors */
   --color-success: #28a745;
   --color-warning: #ffc107;
   --color-error: #dc3545;
-  --color-info: #17a2b8;
+  --color-info: var(--primary-500);
 }
 
 @theme inline {
-  /* Brand */
+  /* Primary Scale */
+  --color-primary-900: var(--primary-900);
+  --color-primary-800: var(--primary-800);
+  --color-primary-700: var(--primary-700);
+  --color-primary-600: var(--primary-600);
+  --color-primary-500: var(--primary-500);
+  
+  /* Backgrounds */
+  --color-bg-main: var(--bg-main);
+  --color-bg-soft: var(--bg-soft);
+  --color-surface: var(--surface);
+  
+  /* Text Colors */
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+  --color-silver: var(--silver);
+  
+  /* Accent */
+  --color-accent: var(--accent);
+  
+  /* Legacy Brand Colors */
   --color-primary: var(--color-primary);
   --color-primary-dark: var(--color-primary-dark);
   --color-primary-light: var(--color-primary-light);

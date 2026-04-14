@@ -32,7 +32,7 @@ export async function getMatches(limit = 20): Promise<MatchWithTeams[]> {
     return []
   }
 
-  return data || []
+  return (data as unknown as MatchWithTeams[]) || []
 }
 
 export async function getUpcomingMatches(limit = 5): Promise<MatchWithTeams[]> {
@@ -58,7 +58,7 @@ export async function getUpcomingMatches(limit = 5): Promise<MatchWithTeams[]> {
     return []
   }
 
-  return data || []
+  return (data as unknown as MatchWithTeams[]) || []
 }
 
 export async function getRecentMatches(limit = 5): Promise<MatchWithTeams[]> {
@@ -84,7 +84,7 @@ export async function getRecentMatches(limit = 5): Promise<MatchWithTeams[]> {
     return []
   }
 
-  return data || []
+  return (data as unknown as MatchWithTeams[]) || []
 }
 
 export async function getMatchById(id: string): Promise<MatchWithTeams | null> {
@@ -106,5 +106,5 @@ export async function getMatchById(id: string): Promise<MatchWithTeams | null> {
     return null
   }
 
-  return data
+  return data as unknown as MatchWithTeams | null
 }

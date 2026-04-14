@@ -25,7 +25,7 @@ export async function getStandings(seasonId: string, competitionId: string): Pro
     return []
   }
 
-  return data || []
+  return (data as unknown as StandingWithTeam[]) || []
 }
 
 export async function getTeamStanding(teamId: string, seasonId: string, competitionId: string): Promise<StandingWithTeam | null> {
@@ -46,5 +46,5 @@ export async function getTeamStanding(teamId: string, seasonId: string, competit
     return null
   }
 
-  return data
+  return data as unknown as StandingWithTeam | null
 }
